@@ -29,7 +29,7 @@ class Campeonato:
             print("Idade inválida. Digite um número.")
 
         while True:
-            posicao = input("Posição: ").strip()
+            posicao = input("Posição: ").strip().upper()
             if self.validar_nome(posicao):
                 break
             print("Posição inválida. Digite apenas letras e espaços.")
@@ -69,11 +69,9 @@ class Campeonato:
                 print("Já existe um jogador com esse nome.")
                 return
             self.jogadores[novo_nome] = self.jogadores.pop(nome_antigo)
-
             if jogador["time"]:
                 self.times[jogador["time"]].remove(nome_antigo)
                 self.times[jogador["time"]].append(novo_nome)
-
             nome_antigo = novo_nome
 
         idade = input(f"Nova idade ({jogador['idade']}): ").strip()
@@ -83,7 +81,7 @@ class Campeonato:
             else:
                 print("Idade inválida. Alteração ignorada.")
 
-        posicao = input(f"Nova posição ({jogador['posicao']}): ").strip()
+        posicao = input(f"Nova posição ({jogador['posicao']}): ").strip().upper()
         if posicao:
             if self.validar_nome(posicao):
                 self.jogadores[nome_antigo]["posicao"] = posicao
@@ -92,6 +90,9 @@ class Campeonato:
 
         alterar_time = input("Deseja alterar o time do jogador? (s/n): ").strip().lower()
         if alterar_time == 's':
+            if not self.times:
+                print("Nenhum time disponível para alteração.")
+                return
             print("Times disponíveis:")
             for time in self.times:
                 print(f"- {time}")
@@ -177,6 +178,54 @@ class Campeonato:
         for i, (t1, t2) in enumerate(self.confrontos, 1):
             print(f"{i}. {t1} vs {t2}")
 
+    def sugerir_escalacao(self):
+        if not self.times:
+            print("Nenhum time disponível.")
+            return
+
+        print("Times disponíveis:")
+        nomes_times = list(self.times.keys())
+        for i, nome in enumerate(nomes_times, 1):
+            print(f"{i}. {nome}")
+
+        try:
+            escolha = int(input("Digite o número do time para sugerir a escalação: ")) - 1
+            if escolha < 0 or escolha >= len(nomes_times):
+                print("Número inválido.")
+                return
+            nome_time = nomes_times[escolha]
+        except ValueError:
+            print("Entrada inválida.")
+            return
+
+        jogadores = self.times[nome_time]
+        if len(jogadores) < 11:
+            print("Não há jogadores suficientes para sugerir uma escalação (mínimo 11).")
+            return
+
+        posicoes_ideais = [
+            "GOL", "LD", "ZAG", "ZAG", "LE", "VOL", "MC", "MEI", "PD", "ATA", "PE"
+        ]
+
+        escalação = []
+        usados = set()
+
+        for pos in posicoes_ideais:
+            for nome in jogadores:
+                if nome not in usados and self.jogadores[nome]["posicao"].upper() == pos:
+                    escalação.append((nome, pos))
+                    usados.add(nome)
+                    break
+
+        for nome in jogadores:
+            if nome not in usados and len(escalação) < 11:
+                escalação.append((nome, self.jogadores[nome]["posicao"]))
+                usados.add(nome)
+
+        print(f"\nEscalação sugerida para o time '{nome_time}':")
+        for i, (nome, pos) in enumerate(escalação, 1):
+            print(f"{i}. {nome} - {pos}")
+
 def menu():
     campeonato = Campeonato()
     while True:
@@ -187,7 +236,8 @@ def menu():
         print("4. Realizar Confronto")
         print("5. Listar Jogadores")
         print("6. Listar Confrontos")
-        print("7. Sair")
+        print("7. Sugerir Escalação")
+        print("8. Sair")
 
         opcao = input("Escolha uma opção: ")
 
@@ -204,6 +254,8 @@ def menu():
         elif opcao == "6":
             campeonato.listar_confrontos()
         elif opcao == "7":
+            campeonato.sugerir_escalacao()
+        elif opcao == "8":
             print("Encerrando o programa.")
             sys.exit()
         else:
